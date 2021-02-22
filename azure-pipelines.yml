@@ -1,0 +1,92 @@
+# Node.js React Web App to Linux on Azure
+# Build a Node.js React app and deploy it to Azure as a Linux web app.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/javascript
+
+trigger:
+- master
+
+variables:
+
+  # Azure Resource Manager connection created during pipeline creation
+  azureSubscription: '779a67a6-d407-4d36-8f22-38ee2f35f27f'
+
+  # Web app name
+  webAppName: 'webapp-yamlhol'
+
+  # Environment name
+  environmentName: 'webapp-yamlhol'
+
+  # Resource Group Name
+  rgName: 'yamlhol'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+
+    steps:
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+
+    - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      artifact: drop
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    environment: $(environmentName)
+    pool:
+      vmImage: $(vmImageName)
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Azure App Service Deploy webapp-yamlhol'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              appType: webAppLinux
+              WebAppName: $(webAppName)
+              packageForLinux: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+              RuntimeStack: 'NODE|12 LTS'
+              StartupCommand: 'npm run start'
+              ScriptType: 'Inline Script'
+              InlineScript: |
+                npm install
+                npm run build --if-present
+          - task: AzureAppServiceSettings@1
+            inputs:
+              azureSubscription: $(azureSubscription)
+              appName: $(webAppName)
+              resourceGroupName: $(rgName)
+              appSettings: |
+                [
+                   {
+                    "name": "REACT_APP_VISIONENDPOINT",
+                    "value": "$(visionendpoint)",
+                    "slotSetting": false
+                   },
+                   {
+                    "name": "REACT_APP_VISIONKEY",
+                    "value": "$(visionkey)",
+                    "slotSetting": false
+                   }
+                ]

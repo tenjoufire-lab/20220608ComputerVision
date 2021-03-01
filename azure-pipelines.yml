@@ -9,7 +9,7 @@ trigger:
 variables:
 
   # Azure Resource Manager connection created during pipeline creation
-  azureSubscription: '779a67a6-d407-4d36-8f22-38ee2f35f27f'
+  azureSubscription: 'yamlholconnection'
 
   # Web app name
   webAppName: 'webapp-yamlhol'
@@ -33,6 +33,13 @@ stages:
       vmImage: $(vmImageName)
 
     steps:
+    - task: Npm@1
+      inputs:
+        command: 'install'
+    - script: |
+       npm install react-scripts
+       npm run build
+       
     - task: ArchiveFiles@2
       displayName: 'Archive files'
       inputs:
@@ -66,12 +73,8 @@ stages:
               appType: webAppLinux
               WebAppName: $(webAppName)
               packageForLinux: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-              RuntimeStack: 'NODE|12 LTS'
+              RuntimeStack: 'NODE|12-lts'
               StartupCommand: 'npm run start'
-              ScriptType: 'Inline Script'
-              InlineScript: |
-                npm install
-                npm run build --if-present
           - task: AzureAppServiceSettings@1
             inputs:
               azureSubscription: $(azureSubscription)

@@ -1,4 +1,3 @@
-import logo from './logo.svg';
 import './App.css';
 import React, { Component } from 'react';
 import 'dotenv'
@@ -90,6 +89,7 @@ class App extends Component {
       console.log('No objects found.');
     }
     document.getElementById('peoplecount').textContent = peopleCount + '人検出されました';
+    document.getElementById('row').textContent = JSON.stringify(objects,null,'\t');
   }
 
 
@@ -108,6 +108,7 @@ class App extends Component {
             <img className="preview-img" src={this.state.imageURL} ref={this.imageEle} />
           </div>
           <h4 id="peoplecount">画像を送信してください</h4>
+          <div id="row"></div>
         </div>
       </div>
 

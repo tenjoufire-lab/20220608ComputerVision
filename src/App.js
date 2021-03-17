@@ -4,14 +4,15 @@ import 'dotenv'
 
 const ComputerVisionClient = require('@azure/cognitiveservices-computervision').ComputerVisionClient;
 const ApiKeyCredentials = require('@azure/ms-rest-js').ApiKeyCredentials;
-
+/*
 const visionEndpoint = process.env.REACT_APP_VISIONENDPOINT;
 const visionKey = process.env.REACT_APP_VISIONKEY;
-
 const computerVisionClient = new ComputerVisionClient(
   new ApiKeyCredentials({ inHeader: { 'Ocp-Apim-Subscription-Key': visionKey } }), visionEndpoint);
+  */
+var computerVisionClient;
 
-var blob
+var blob;
 var peopleCount = 0;
 
 class App extends Component {
@@ -41,6 +42,15 @@ class App extends Component {
   }
 
   takeSelfie = async () => {
+
+    if(document.forms.form1.key.value == '' || document.forms.form1.endpoint.value == ''){
+      window.alert("EndpointとKeyを入力してください")
+      return;
+    }
+
+    computerVisionClient = new ComputerVisionClient(
+      new ApiKeyCredentials({ inHeader: { 'Ocp-Apim-Subscription-Key': document.forms.form1.key.value } }), document.forms.form1.endpoint.value);
+
     // Get the exact size of the video element.
     const width = this.videoEle.current.videoWidth;
     const height = this.videoEle.current.videoHeight;
@@ -89,7 +99,7 @@ class App extends Component {
       console.log('No objects found.');
     }
     document.getElementById('peoplecount').textContent = peopleCount + '人検出されました';
-    document.getElementById('row').textContent = JSON.stringify(objects,null,'\t');
+    document.getElementById('row').textContent = JSON.stringify(objects, null, '\t');
   }
 
 
@@ -103,6 +113,16 @@ class App extends Component {
           </button>
         </div>
         <div className="result">
+          <div>
+            <form id="form1">
+              <ul type="none">
+                <li>endpoint:</li>
+                <li><input id="endpoint" type="text" size="40"/></li>
+                <li>key:</li>
+                <li><input id="key" type="password" size="40"/></li>
+              </ul>
+            </form>
+          </div>
           <div className="preview">
             <canvas ref={this.canvasEle} style={{ display: 'none' }}></canvas>
             <img className="preview-img" src={this.state.imageURL} ref={this.imageEle} />
